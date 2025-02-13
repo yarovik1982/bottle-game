@@ -2,15 +2,41 @@ import { Bottle, rectWidth, rectHeight } from "./bottle.js";
 import { drawScene } from "./render.js";
 import { setupEventListeners } from "./events.js";
 
-const container = document.querySelector(".container");
-const rect = container.getBoundingClientRect();
-const width = rect.width;
-const height = rect.height;
+class Game {
+    container;
+    rect;
 
-const canvas = document.getElementById("gameCanvas");
+    constructor() {
+        this.initContainer();
+    }
+
+    initContainer () {
+        const root = document.querySelector(".game");
+
+        if (!root) {
+            throw Error('There is no Game container');
+        }
+
+        this.container = root;
+        this.rect = root.getBoundingClientRect();        
+    }
+
+    start() {
+        this.container.classList.add('game--running');
+    }
+
+    finish() {
+        this.container.classList.remove('game--running');
+    }
+}
+
+const game = new Game();
+const canvas = game.container.querySelector(".game__canvas");
+const playButton = game.container.querySelector(".game__play-button");
+
 const ctx = canvas.getContext("2d");
-canvas.width = width;
-canvas.height = height;
+canvas.width = game.rect.width;
+canvas.height = game.rect.height;
 
 const bottles = [];
 const totalWidth = (rectWidth + 20) * 5 - 20;
@@ -24,7 +50,4 @@ for (let i = 0; i < 5; i++) {
 drawScene(ctx, canvas, bottles);
 setupEventListeners(canvas, bottles);
 
-document.getElementById("play").addEventListener("click", function () {
-    this.style.display = "none";
-    canvas.style.display = "block";
-});
+playButton.addEventListener("click", () => game.start());
