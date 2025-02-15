@@ -1,3 +1,5 @@
+import { state } from "./state.js";
+
 export const rectWidth = 50;
 export const rectHeight = 150;
 const borderWidth = 2;
@@ -10,6 +12,8 @@ export class Bottle {
     constructor(x, y, hasLiquids = true) {
         this.x = x;
         this.y = y;
+        this.width = rectWidth;
+        this.height = rectHeight;
         this.originalX = x;
         this.originalY = y;
         this.angle = 0;
@@ -63,6 +67,16 @@ export class Bottle {
         ctx.restore();
     }
 
+    select() {
+        state.activeBottle = this;
+        this.liftUp()
+    }
+
+    unselect() {
+        state.activeBottle = null;
+        this.resetPosition()
+    }
+
     liftUp() {
         this.y = this.originalY - 75;
     }
@@ -73,7 +87,12 @@ export class Bottle {
         this.angle = 0;
     }
 
-    moveTo(target, callback) {
+    moveTo(target) {
+        // Just for showing example, replace callback to "state" workaround
+        function callback() {
+            state.activeBottle = null;
+        }
+
         if (this.liquids.length === 0 || target.liquids.length >= maxLiquids) {
             this.returnToOriginal(callback);
             return;
