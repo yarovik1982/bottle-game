@@ -113,7 +113,7 @@ export class Bottle {
         const targetX = movingRight
             ? target.x - rectWidth - 20
             : target.x + rectWidth + 20;
-        const targetY = this.originalY - 30;
+        const targetY = this.originalY - 75;
         const targetAngle = movingRight ? 60 : -60;
 
         const animateMove = (time) => {

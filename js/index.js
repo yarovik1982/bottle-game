@@ -1,5 +1,5 @@
 import { Game } from "./Game.js";
-import { Bottle, rectWidth as bottleWidth, rectHeight as bottleHeight } from "./Bottle.js";
+import { Bottle, rectWidth as bottleWidth, rectHeight as bottleHeight } from "./bottle.js";
 import { state } from "./state.js";
 import { drawScene } from "./render.js";
 import { isPointInRect } from "./library.js";
@@ -8,7 +8,7 @@ const game = new Game();
 
 // Setup game, creating bottles
 const bottles = [];
-const bottlesAmount = 5;
+const bottlesAmount = 6;
 const gap = 20;
 
 const bottlesWidth = (bottleWidth * bottlesAmount) + (gap * bottlesAmount) - gap;
