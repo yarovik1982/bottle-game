@@ -1,174 +1,177 @@
 import { state } from "./state.js";
-
-export const rectWidth = 50;
-export const rectHeight = 150;
-const borderWidth = 2;
-const ovalHeight = 10;
-const liquidHeight = rectHeight * 0.2;
-const maxLiquids = 4;
-const colors = ["red", "blue", "yellow", "green"];
+import { coinFlip, clamp } from "./library.js";
 
 export class Bottle {
-    constructor(x, y, hasLiquids = true) {
+    static border = 2;
+    static width = 50;
+    static height = 150;
+    static capacity = 4;
+    static gap = 20;
+
+    constructor(x, y, filled = true) {
         this.x = x;
         this.y = y;
-        this.width = rectWidth;
-        this.height = rectHeight;
-        this.originalX = x;
-        this.originalY = y;
+        this.xOrigin = x;
+        this.yOrigin = y;
+        this.width = this.constructor.width;
+        this.height = this.constructor.height;
         this.angle = 0;
-        this.liquids = hasLiquids ? this.getRandomLiquids() : [];
+        this.liquids = filled ? this.addLiquids() : [];
     }
 
-    getRandomLiquids() {
-        return [...colors].sort(() => Math.random() - 0.5).slice(0, maxLiquids);
+    addLiquids() {
+        const size = {
+            height: this.constructor.height / (this.constructor.capacity + 1),
+            width: this.constructor.width - this.constructor.border / 2
+        }
+
+        return [
+            { type: "milk", color: "white", ...size },
+            { type: "lava", color: "red", ...size },
+            { type: "water", color: "blue", ...size },
+            { type: "juice", color: "yellow", ...size },
+            { type: "glue", color: "green", ...size },
+        ].slice(-this.constructor.capacity).sort(coinFlip);
     }
+
+    getLiquids(max) {
+        const liquid = this.liquids.at(-1);
+        const amount = this.liquids.length - (this.liquids.findLastIndex(currentLiquid => currentLiquid.type !== liquid.type) + 1);
+
+        return this.liquids.slice(-Math.min(amount, max))
+    }
+
+    // Bottle Control
+
+    select() {
+        if (!this.liquids.length) {
+            this.shake()
+
+            return
+        }
+
+        state.activeBottle = this;
+        this.lift()
+    }
+
+    unselect() {
+        state.activeBottle = null;
+        this.restore()
+    }
+
+    pour(target) {
+        if (target.liquids.length >= this.constructor.capacity) {
+            target.shake()
+
+            return
+        }
+
+        this.moveTo(target)
+    }
+
+    // Bottle Render
 
     draw(ctx) {
         ctx.save();
-        ctx.translate(this.x + rectWidth / 2, this.y + rectHeight / 2);
+        ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
         ctx.rotate((this.angle * Math.PI) / 180);
-        ctx.translate(-rectWidth / 2, -rectHeight / 2);
+        ctx.translate(-this.width / 2, -this.height / 2);
 
-        // Овал сверху
+        // Колба
+        ctx.strokeStyle = "#CCC";
         ctx.beginPath();
-        ctx.ellipse(
-            rectWidth / 2,
-            borderWidth,
-            rectWidth / 2,
-            ovalHeight / 2,
-            0,
-            0,
-            Math.PI * 2
-        );
-        ctx.strokeStyle = "#ccc";
-        ctx.lineWidth = borderWidth;
+        ctx.roundRect(0, 0, this.width, this.height, [0, 0, this.width, this.width])
+        ctx.rect(-this.width * 0.1, 0, this.width * 1.2, -this.height * 0.1);
         ctx.stroke();
 
-        // Прямоугольник бутылки
-        ctx.beginPath();
-        ctx.moveTo(0, borderWidth + ovalHeight / 2 - 5);
-        ctx.lineTo(0, rectHeight);
-        ctx.lineTo(rectWidth, rectHeight);
-        ctx.lineTo(rectWidth, borderWidth + ovalHeight / 2 - 5);
-        ctx.stroke();
+        // Жидкости
+        this.liquids.forEach((liquid, index) => {
+            const position = index + 1
+            const x = 0
+            const y = this.height - liquid.height * position
 
-        // Жидкости внутри
-        this.liquids.forEach((color, index) => {
-            ctx.fillStyle = color;
-            ctx.fillRect(
-                0,
-                rectHeight - (index + 1) * liquidHeight,
-                rectWidth,
-                liquidHeight
-            );
+            ctx.fillStyle = liquid.color;
+            ctx.beginPath();
+
+            index
+                ? ctx.rect(x, y, liquid.width, liquid.height)
+                : ctx.roundRect(x, y, liquid.width, liquid.height - this.constructor.border / 2, [0, 0, this.width, this.width]);
+
+            ctx.fill();
         });
 
         ctx.restore();
     }
 
-    select() {
-        state.activeBottle = this;
-        this.liftUp()
+    // Bottle Animations
+
+    lift() { // Still Without Animation
+        this.y = this.yOrigin - 75;
     }
 
-    unselect() {
-        state.activeBottle = null;
-        this.resetPosition()
-    }
-
-    liftUp() {
-        this.y = this.originalY - 75;
-    }
-
-    resetPosition() {
-        this.x = this.originalX;
-        this.y = this.originalY;
+    restore() { // Still Without Animation
+        this.x = this.xOrigin;
+        this.y = this.yOrigin;
         this.angle = 0;
     }
 
-    moveTo(target) {
-        // Just for showing example, replace callback to "state" workaround
-        function callback() {
-            state.activeBottle = null;
-        }
+    shake() { // Bad Animation
+        this.x = this.xOrigin + 5;
+        
+        setTimeout(() => {
+            this.x = this.xOrigin - 5;
 
-        if (this.liquids.length === 0 || target.liquids.length >= maxLiquids) {
-            this.returnToOriginal(callback);
-            return;
-        }
+            setTimeout(() => {
+                this.x = this.xOrigin + 5;
 
-        const transferLiquids = this.getTransferableLiquids(target);
-        if (!transferLiquids.length) {
-            this.returnToOriginal(callback);
-            return;
-        }
+                setTimeout(() => {
+                    this.x = this.xOrigin;
+                }, 100)
+            }, 100)
+        }, 100)
+    }
 
-        const animationDuration = 500;
-        const startTime = performance.now();
-        const startX = this.x;
-        const startY = this.y;
+    moveTo(target) { // Good Animation
+        const maxLiquidsToTransfer = target.constructor.capacity - target.liquids.length;
+        const liquidsToTransfer = this.getLiquids(maxLiquidsToTransfer);
 
-        const movingRight = this.x < target.x;
-        const targetX = movingRight
-            ? target.x - rectWidth - 20
-            : target.x + rectWidth + 20;
-        const targetY = this.originalY - 75;
-        const targetAngle = movingRight ? 60 : -60;
+        const speed = 1.2;
+        const startTime = document.timeline.currentTime;
+        const offset = this.constructor.width + this.constructor.gap;
 
-        const animateMove = (time) => {
-            let progress = (time - startTime) / animationDuration;
-            if (progress > 1) progress = 1;
+        const direction = target.x > this.x ? 1 : -1;
+        const distance = target.x - this.x - offset * direction
+        const duration = Math.abs(distance / speed);
+        const finalAngle = 45 * direction
 
-            this.x = startX + (targetX - startX) * progress;
-            this.y = startY + (targetY - startY) * progress;
+        const animateMove = (currentTime) => {
+            const progress = clamp(0, (currentTime - startTime) / duration, 1)
+
+            this.x = this.xOrigin + distance * progress;
+            this.angle = finalAngle * progress;
 
             if (progress < 1) {
-                requestAnimationFrame(animateMove);
+                requestAnimationFrame(animateMove)
             } else {
-                this.angle = targetAngle;
-                setTimeout(
-                    () => this.animatePour(target, transferLiquids, callback),
-                    500
-                );
+                this.pourIn(target, liquidsToTransfer)
             }
         };
 
         requestAnimationFrame(animateMove);
     }
 
-    getTransferableLiquids(target) {
-        if (this.liquids.length === 0 || target.liquids.length >= maxLiquids) {
-            return [];
-        }
+    pourIn(target, transferLiquids) { // Bad Animation
 
-        const topLiquid = this.liquids[this.liquids.length - 1];
-        let count = 1;
-
-        for (let i = this.liquids.length - 2; i >= 0; i--) {
-            if (this.liquids[i] === topLiquid) {
-                count++;
-            } else {
-                break;
-            }
-        }
-
-        const availableSpace = maxLiquids - target.liquids.length;
-        return this.liquids.slice(-Math.min(count, availableSpace));
-    }
-
-    animatePour(target, transferLiquids, callback) {
-        const removeLiquids = () => {
+        setTimeout(() => {
             this.liquids.splice(-transferLiquids.length);
-            setTimeout(() => target.liquids.push(...transferLiquids), 300);
-            setTimeout(() => this.returnToOriginal(callback), 500);
-        };
 
-        setTimeout(removeLiquids, 300);
-    }
+            setTimeout(() => {
+                target.liquids.push(...transferLiquids)
 
-    returnToOriginal(callback) {
-        this.resetPosition();
-        if (callback) callback();
+                setTimeout(() => {
+                    this.unselect()
+                }, 300);
+            }, 300);
+        }, 300);
     }
 }
