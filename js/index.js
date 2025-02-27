@@ -1,5 +1,5 @@
 import { Game } from "./Game.js";
-import { Bottle, rectWidth as bottleWidth, rectHeight as bottleHeight } from "./bottle.js";
+import { Bottle } from "./bottle.js";
 import { state } from "./state.js";
 import { drawScene } from "./render.js";
 import { isPointInRect } from "./library.js";
@@ -9,15 +9,15 @@ const game = new Game();
 // Setup game, creating bottles
 const bottles = [];
 const bottlesAmount = 6;
-const gap = 20;
+const filledBottlesAmount = 4;
 
-const bottlesWidth = (bottleWidth * bottlesAmount) + (gap * bottlesAmount) - gap;
+const bottlesWidth = (Bottle.width * bottlesAmount) + (Bottle.gap * bottlesAmount) - Bottle.gap;
 const startX = (game.canvas.width - bottlesWidth) / 2;
-const y = (game.canvas.height - bottleHeight) / 2;
+const y = (game.canvas.height - Bottle.height) / 2;
 
 for (let i = 0; i < bottlesAmount; i++) {
-    const fillBottle = i < 4;
-    const x = startX + i * (bottleWidth + gap);
+    const fillBottle = i < filledBottlesAmount;
+    const x = startX + i * (Bottle.width + Bottle.gap);
     const bottle = new Bottle(x, y, fillBottle);
 
     bottles.push(bottle);
@@ -48,7 +48,7 @@ game.canvas.addEventListener("click", event => {
     } else if (!clickedBottle) {
         state.activeBottle.unselect();              // Do 4
     } else {
-        state.activeBottle.moveTo(clickedBottle);   // Do 2
+        state.activeBottle.pour(clickedBottle);   // Do 2
     }
 });
 

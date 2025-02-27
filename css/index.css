@@ -9,19 +9,20 @@ body {
    overflow: hidden;
    display: flex;
    height: 100vh;
+   background: light-dark(#16161d, #efefec);
 }
 
 .game {
+   box-shadow: 0 0 3px light-dark(#efefec, #16161d);
+   border-radius: 6px;
    margin: auto;
    width: 500px;
    aspect-ratio: 1;
-   background-color: #333;
    display: grid;
    place-content: center;
 }
 
 .game__canvas {
-   background-color: #333;
    grid-area: 1 / 1 / -1 / -1;
 
    :not(.game--running) > & {
@@ -35,7 +36,7 @@ body {
    aspect-ratio: 1;
    border-radius: 50%;
    border: 0;
-   background-image: radial-gradient(white,gold);
+   background-image: radial-gradient(white, gold);
    box-shadow: inset 0 0 0 black, 0 0 11px 1px black;
    transition: box-shadow .2s;
    cursor: pointer;
